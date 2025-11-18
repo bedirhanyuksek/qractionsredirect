@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Ödeme - Yönlendiriliyor...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        .icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .status {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+        
+        .info-card {
+            background: #f7f9fc;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #888;
+            font-size: 14px;
+        }
+        
+        .info-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: right;
+            word-break: break-all;
+        }
+        
+        .bank-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+        
+        .button {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 14px 32px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 10px 5px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .button.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .button.secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            color: #e74c3c;
+            margin-top: 20px;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon" id="icon">💳</div>
+        <h1 id="title">Banka Uygulaması Açılıyor...</h1>
+        <p class="status" id="status">Lütfen bekleyin</p>
+        
+        <div id="bankBadge"></div>
+        
+        <div class="info-card" id="paymentInfo" style="display: none;">
+            <!-- Payment info will be injected here -->
+        </div>
+        
+        <div id="actions" style="display: none;">
+            <button class="button" onclick="retryOpen()">
+                🏦 Banka Uygulamasını Aç
+            </button>
+            <button class="button secondary" onclick="copyIBAN()">
+                📋 IBAN Kopyala
+            </button>
+        </div>
+        
+        <div class="footer">
+            QR Actions - Güvenli Ödeme Yönlendirmesi
+        </div>
+    </div>
+
+    <script>
+        // Parse URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const iban = urlParams.get('iban');
+        const name = urlParams.get('name');
+        const amount = urlParams.get('amount');
+        const desc = urlParams.get('desc');
+        const bank = urlParams.get('bank');
+        const deepLink = urlParams.get('deeplink');
+        
+        // Bank apps deep link schemes
+        const bankSchemes = {
+            'Ziraat': 'ziraatmobil',
+            'Halkbank': 'halkbank',
+            'Vakıfbank': 'vakifbank',
+            'Akbank': 'akbank',
+            'Garanti BBVA': 'garantibbva',
+            'İş Bankası': 'iscep',
+            'Yapı Kredi': 'yapikredi',
+            'ING': 'ingmobile',
+            'QNB Finansbank': 'finansbank',
+            'Denizbank': 'denizbank',
+            'TEB': 'teb',
+            'Kuveyt Türk': 'kuveytturk'
+        };
+        
+        function showPaymentInfo() {
+            const infoCard = document.getElementById('paymentInfo');
+            let html = '';
+            
+            if (bank) {
+                document.getElementById('bankBadge').innerHTML = 
+                    `<div class="bank-badge">${bank}</div>`;
+            }
+            
+            if (name) {
+                html += `
+                    <div class="info-row">
+                        <span class="info-label">Alıcı</span>
+                        <span class="info-value">${name}</span>
+                    </div>
+                `;
+            }
+            
+            if (iban) {
+                html += `
+                    <div class="info-row">
+                        <span class="info-label">IBAN</span>
+                        <span class="info-value">${formatIBAN(iban)}</span>
+                    </div>
+                `;
+            }
+            
+            if (amount) {
+                html += `
+                    <div class="info-row">
+                        <span class="info-label">Tutar</span>
+                        <span class="info-value">${amount} TRY</span>
+                    </div>
+                `;
+            }
+            
+            if (desc) {
+                html += `
+                    <div class="info-row">
+                        <span class="info-label">Açıklama</span>
+                        <span class="info-value">${desc}</span>
+                    </div>
+                `;
+            }
+            
+            infoCard.innerHTML = html;
+            infoCard.style.display = 'block';
+        }
+        
+        function formatIBAN(iban) {
+            if (!iban) return '';
+            return iban.match(/.{1,4}/g).join(' ');
+        }
+        
+        function buildDeepLink() {
+            if (deepLink) {
+                return decodeURIComponent(deepLink);
+            }
+            
+            // Build generic deep link
+            let scheme = 'bankapp';
+            
+            if (bank && bankSchemes[bank]) {
+                scheme = bankSchemes[bank];
+            }
+            
+            const params = new URLSearchParams();
+            if (iban) params.append('iban', iban);
+            if (name) params.append('name', name);
+            if (amount) params.append('amount', amount);
+            if (desc) params.append('description', desc);
+            
+            return `${scheme}://payment?${params.toString()}`;
+        }
+        
+        function tryOpenBankApp() {
+            const deepLinkUrl = buildDeepLink();
+            
+            // Try to open deep link
+            window.location.href = deepLinkUrl;
+            
+            // Fallback after 2 seconds
+            setTimeout(() => {
+                showFallback();
+            }, 2000);
+        }
+        
+        function showFallback() {
+            document.getElementById('icon').textContent = '⚠️';
+            document.getElementById('title').textContent = 'Banka Uygulaması Bulunamadı';
+            document.getElementById('status').textContent = 
+                'Banka uygulamanız kurulu değil veya açılamadı. Bilgileri manuel olarak girebilirsiniz.';
+            document.getElementById('actions').style.display = 'block';
+        }
+        
+        function retryOpen() {
+            document.getElementById('icon').textContent = '💳';
+            document.getElementById('title').textContent = 'Banka Uygulaması Açılıyor...';
+            document.getElementById('status').textContent = 'Lütfen bekleyin';
+            document.getElementById('actions').style.display = 'none';
+            
+            setTimeout(() => {
+                tryOpenBankApp();
+            }, 500);
+        }
+        
+        function copyIBAN() {
+            if (iban) {
+                navigator.clipboard.writeText(iban).then(() => {
+                    alert('✅ IBAN kopyalandı: ' + formatIBAN(iban));
+                }).catch(() => {
+                    alert('IBAN: ' + formatIBAN(iban));
+                });
+            }
+        }
+        
+        // Main execution
+        if (!iban || !name) {
+            document.getElementById('icon').textContent = '❌';
+            document.getElementById('title').textContent = 'Geçersiz QR Kod';
+            document.getElementById('status').textContent = 
+                'QR kod geçersiz veya eksik bilgi içeriyor.';
+        } else {
+            showPaymentInfo();
+            
+            // Auto-open bank app after 1 second
+            setTimeout(() => {
+                tryOpenBankApp();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
+
