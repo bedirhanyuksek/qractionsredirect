@@ -263,7 +263,9 @@
         
         function buildDeepLink() {
             if (deepLink) {
-                return decodeURIComponent(deepLink);
+                // URLSearchParams.get already decodes, so don't decode again
+                console.log('Using provided deepLink:', deepLink);
+                return deepLink;
             }
             
             // Build generic deep link
@@ -285,12 +287,34 @@
         function tryOpenBankApp() {
             const deepLinkUrl = buildDeepLink();
             
-            // Try to open deep link
-            window.location.href = deepLinkUrl;
+            console.log('Attempting to open deep link:', deepLinkUrl);
             
-            // Fallback after 2 seconds
+            // Try multiple methods to open deep link
+            // Method 1: Create invisible iframe (works better on some browsers)
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = deepLinkUrl;
+            document.body.appendChild(iframe);
+            
+            // Method 2: Also try direct navigation (fallback)
+            setTimeout(() => {
+                window.location.href = deepLinkUrl;
+            }, 100);
+            
+            // Method 3: Create a link and click it (alternative approach)
+            setTimeout(() => {
+                const link = document.createElement('a');
+                link.href = deepLinkUrl;
+                link.click();
+            }, 200);
+            
+            // Fallback after 2 seconds if app didn't open
             setTimeout(() => {
                 showFallback();
+                // Clean up iframe
+                if (iframe && iframe.parentNode) {
+                    iframe.parentNode.removeChild(iframe);
+                }
             }, 2000);
         }
         
@@ -340,4 +364,3 @@
     </script>
 </body>
 </html>
-
