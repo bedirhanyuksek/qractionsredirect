@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi Link</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: white;
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .profile-image {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: white;
+      border: 4px solid white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #666;
+      font-weight: 400;
+    }
+
+    .items {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      text-decoration: none;
+      color: #1a1a1a;
+      transition: all 0.3s ease;
+      border-left: 4px solid #667eea;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.5s;
+    }
+
+    .item:hover::before {
+      left: 100%;
+    }
+
+    .item:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      background: #ffffff;
+    }
+
+    .item-icon {
+      font-size: 32px;
+      margin-right: 16px;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(102, 126, 234, 0.1);
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+
+    .item-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .item-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #1a1a1a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .item-subtitle {
+      font-size: 13px;
+      color: #666;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .item-arrow {
+      font-size: 24px;
+      color: #667eea;
+      margin-left: 12px;
+      flex-shrink: 0;
+      transition: transform 0.3s;
+    }
+
+    .item:hover .item-arrow {
+      transform: translateX(4px);
+    }
+
+    .footer {
+      text-align: center;
+      padding-top: 24px;
+      border-top: 1px solid #e9ecef;
+    }
+
+    .footer-text {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .error {
+      text-align: center;
+      padding: 40px;
+      color: #e74c3c;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 24px;
+        border-radius: 16px;
+      }
+
+      .title {
+        font-size: 24px;
+      }
+
+      .item {
+        padding: 14px 16px;
+      }
+
+      .item-icon {
+        font-size: 28px;
+        width: 44px;
+        height: 44px;
+        margin-right: 12px;
+      }
+
+      .item-title {
+        font-size: 15px;
+      }
+
+      .item-subtitle {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loading" class="loading">
+      <div style="font-size: 32px; margin-bottom: 12px;">⏳</div>
+      <div>İçerikler yükleniyor...</div>
+    </div>
+
+    <div id="content" style="display: none;">
+      <div class="header">
+        <div class="profile-image" id="profileImage">👤</div>
+        <h1 class="title" id="title">Başlık</h1>
+        <div class="subtitle" id="subtitle">İçerikler</div>
+      </div>
+
+      <div class="items" id="items"></div>
+
+      <div class="footer">
+        <div class="footer-text">QR Actions ile oluşturuldu</div>
+      </div>
+    </div>
+
+    <div id="error" class="error" style="display: none;">
+      <div style="font-size: 48px; margin-bottom: 16px;">❌</div>
+      <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Hata</div>
+      <div id="errorMessage">İçerikler yüklenirken bir hata oluştu</div>
+    </div>
+  </div>
+
+  <script>
+    // Get data from URL parameters
+    function getDataFromUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const dataParam = urlParams.get('data');
+      
+      if (dataParam) {
+        try {
+          return JSON.parse(decodeURIComponent(dataParam));
+        } catch (e) {
+          console.error('Error parsing data:', e);
+          return null;
+        }
+      }
+      
+      return null;
+    }
+
+    // Get icon based on item type
+    function getItemIcon(item) {
+      if (item.type === 'file' && item.fileName) {
+        const ext = item.fileName.split('.').pop().toLowerCase();
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) return '🖼️';
+        if (['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext)) return '🎥';
+        if (ext === 'pdf') return '📄';
+        if (['doc', 'docx'].includes(ext)) return '📝';
+        if (['xls', 'xlsx'].includes(ext)) return '📊';
+        if (['zip', 'rar', '7z'].includes(ext)) return '📦';
+        return '📁';
+      }
+      return '🔗';
+    }
+
+    // Get domain from URL
+    function getDomain(url) {
+      try {
+        const urlObj = new URL(url);
+        let domain = urlObj.hostname.replace('www.', '');
+        return domain;
+      } catch (e) {
+        // If not a valid URL, return shortened version
+        if (url.length > 30) {
+          return url.substring(0, 30) + '...';
+        }
+        return url;
+      }
+    }
+
+    // Create item HTML
+    function createItemHTML(item, index) {
+      const icon = getItemIcon(item);
+      const domain = item.url ? getDomain(item.url) : (item.fileName || 'Dosya');
+      
+      return `
+        <a href="${item.url || '#'}" 
+           class="item" 
+           target="_blank" 
+           rel="noopener noreferrer"
+           onclick="handleItemClick(event, ${index})">
+          <div class="item-icon">${icon}</div>
+          <div class="item-content">
+            <div class="item-title">${escapeHtml(item.title || 'İsimsiz')}</div>
+            <div class="item-subtitle">${escapeHtml(domain)}</div>
+          </div>
+          <div class="item-arrow">›</div>
+        </a>
+      `;
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Handle item click
+    function handleItemClick(event, index) {
+      const item = itemsData[index];
+      if (!item || !item.url) {
+        event.preventDefault();
+        alert('Bu içerik için URL bulunamadı');
+        return;
+      }
+
+      // Track click (optional - for analytics)
+      console.log('Item clicked:', item.title, item.url);
+    }
+
+    // Parse and display data
+    let itemsData = [];
+
+    function displayContent(data) {
+      const loadingEl = document.getElementById('loading');
+      const contentEl = document.getElementById('content');
+      const errorEl = document.getElementById('error');
+
+      if (!data || !data.items || !Array.isArray(data.items) || data.items.length === 0) {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        document.getElementById('errorMessage').textContent = 'Geçersiz içerik verisi';
+        return;
+      }
+
+      itemsData = data.items;
+
+      // Set title
+      const titleEl = document.getElementById('title');
+      titleEl.textContent = data.title || 'Multi Link';
+
+      // Set subtitle
+      const subtitleEl = document.getElementById('subtitle');
+      subtitleEl.textContent = `${itemsData.length} içerik`;
+
+      // Set profile image (first letter of title)
+      const profileImageEl = document.getElementById('profileImage');
+      if (data.title) {
+        const firstLetter = data.title.charAt(0).toUpperCase();
+        profileImageEl.textContent = firstLetter;
+      }
+
+      // Create items
+      const itemsContainer = document.getElementById('items');
+      itemsContainer.innerHTML = itemsData.map((item, index) => 
+        createItemHTML(item, index)
+      ).join('');
+
+      loadingEl.style.display = 'none';
+      contentEl.style.display = 'block';
+    }
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', () => {
+      const data = getDataFromUrl();
+      
+      if (data) {
+        displayContent(data);
+      } else {
+        // Try to parse from hash as fallback
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+          try {
+            const data = JSON.parse(decodeURIComponent(hash));
+            displayContent(data);
+          } catch (e) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+          }
+        } else {
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('error').style.display = 'block';
+          document.getElementById('errorMessage').textContent = 'URL parametrelerinde veri bulunamadı';
+        }
+      }
+    });
+  </script>
+</body>
+</html>
+
