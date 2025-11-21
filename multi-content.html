@@ -256,9 +256,22 @@
       
       if (dataParam) {
         try {
-          return JSON.parse(decodeURIComponent(dataParam));
+          // URLSearchParams.get() already decodes once, but data might be double-encoded
+          // Try to parse directly first
+          try {
+            return JSON.parse(dataParam);
+          } catch (e1) {
+            // If direct parse fails, try decoding once
+            try {
+              return JSON.parse(decodeURIComponent(dataParam));
+            } catch (e2) {
+              // If still fails, try double decode (in case of double encoding)
+              return JSON.parse(decodeURIComponent(decodeURIComponent(dataParam)));
+            }
+          }
         } catch (e) {
           console.error('Error parsing data:', e);
+          console.error('Data param:', dataParam);
           return null;
         }
       }
@@ -299,20 +312,22 @@
     // Create item HTML
     function createItemHTML(item, index) {
       const icon = getItemIcon(item);
+      const isFile = item.type === 'file';
       const domain = item.url ? getDomain(item.url) : (item.fileName || 'Dosya');
+      const fileSizeText = isFile && item.fileSize ? ' • ' + formatFileSize(item.fileSize) : '';
+      const arrowIcon = isFile ? '⬇️' : '›';
       
       return `
         <a href="${item.url || '#'}" 
            class="item" 
-           target="_blank" 
-           rel="noopener noreferrer"
+           ${isFile ? '' : 'target="_blank" rel="noopener noreferrer"'}
            onclick="handleItemClick(event, ${index})">
           <div class="item-icon">${icon}</div>
           <div class="item-content">
             <div class="item-title">${escapeHtml(item.title || 'İsimsiz')}</div>
-            <div class="item-subtitle">${escapeHtml(domain)}</div>
+            <div class="item-subtitle">${escapeHtml(domain)}${fileSizeText}</div>
           </div>
-          <div class="item-arrow">›</div>
+          <div class="item-arrow">${arrowIcon}</div>
         </a>
       `;
     }
@@ -324,6 +339,14 @@
       return div.innerHTML;
     }
 
+    // Format file size
+    function formatFileSize(bytes) {
+      if (!bytes) return '';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
     // Handle item click
     function handleItemClick(event, index) {
       const item = itemsData[index];
@@ -333,6 +356,16 @@
         return;
       }
 
+      // Dosya ise direkt indirme için link aç
+      if (item.type === 'file') {
+        // Google Drive direct download link'i zaten item.url'de
+        // Yeni sekmede aç (Google Drive download için)
+        event.preventDefault();
+        window.open(item.url, '_blank');
+        return;
+      }
+
+      // Link ise normal şekilde aç (target="_blank" zaten var)
       // Track click (optional - for analytics)
       console.log('Item clicked:', item.title, item.url);
     }
@@ -406,4 +439,3 @@
   </script>
 </body>
 </html>
-
